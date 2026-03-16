@@ -32,6 +32,26 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Testing PawPal+
+
+Run the full test suite from the project root:
+
+```bash
+python -m pytest test_pawpal.py -v
+```
+
+The tests are split into three groups:
+
+**Sorting correctness** — checks that tasks come back in chronological order regardless of the order they were added, that tasks with no start time fall to the end of the list, and that the scheduler respects priority and overdue status when times are equal.
+
+**Recurrence logic** — verifies that marking a daily task complete returns a new task due tomorrow, that a weekly task returns one due exactly seven days later, and that one-time tasks return `None` (no follow-up). Also confirms that the spawned task inherits category, duration, and priority correctly and gets a fresh UUID.
+
+**Conflict detection** — makes sure the scheduler catches exact same-time clashes and overlapping windows, ignores tasks with no assigned time (instead of crashing), handles empty schedules gracefully, and correctly distinguishes between a same-pet conflict and a cross-pet conflict in the warning messages.
+
+**Confidence level: 4 / 5 stars**
+
+The core scheduling behaviors — sorting, recurrence, and conflict detection — are well covered and all 22 tests pass. I knocked off one star because the tests don't yet cover the Streamlit UI layer (session state, button interactions) and don't test multi-week recurring tasks over a longer time horizon. Those edge cases exist, they just aren't exercised yet.
+
 ## Smarter Scheduling
 
 The scheduler has grown past a basic to-do list. Here's what it can do now:
