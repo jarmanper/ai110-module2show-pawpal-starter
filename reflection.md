@@ -1,16 +1,25 @@
 # PawPal+ Project Reflection
 
+## 3 core actions:
+Add a pet, create a feeding schedule, and be able to produce a daily plan.
 ## 1. System Design
 
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+The initial plan had 5 domain classes: `Owner`, `Pet`, `Task`, `Schedule`, and `Scheduler`.
+
+- `Owner`: holds basic owner info (`name`, `location`) and pet relationships (`pets` list). Provides methods to add/remove pets, retrieve a pet, and assign schedules.
+- `Pet`: holds pet profile fields (`name`, `breed`, `weight`, `favorite_food`, `energy_level`) and a `schedule`; provides methods to change favorite food, update energy, assign/get schedule/tasks.
+- `Task`: represents care work (`due_date`, `description`, `completed`, `category`, `duration`, `priority`) with stubs for create/read/update/delete/mark_complete.
+- `Schedule`: day-level plan container (`date`, `tasks`) with task list management methods and total duration.
+- `Scheduler`: orchestration class containing tasks with methods to add/remove/update tasks, query pending/completed, and generate a daily plan.
+
+I also added `Constraints` to encapsulate planning rules (`max_available_time`, `preferred_categories`, `available_hours`, `min_priority`).
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+- At this stage, no structural design changes were made after initial skeleton creation; the implementation follows the original design.
+- Pending Copilot feedback, I may add an explicit `TaskRepository` or `OwnerManager` layer if the review flags single-class responsibility issues.
 
 ---
 
