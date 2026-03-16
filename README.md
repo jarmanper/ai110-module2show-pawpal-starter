@@ -32,6 +32,20 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Smarter Scheduling
+
+The scheduler has grown past a basic to-do list. Here's what it can do now:
+
+**Recurring tasks** — when you call `task.mark_complete()`, it automatically returns a new copy of the task due the next day (for daily tasks) or the same weekday next week (for weekly tasks). You can pass that straight to `pet.add_task()` so the task reappears without any extra effort. One-time tasks just return `None`, so the pattern is the same either way.
+
+**Energy-aware ordering** — the scheduler looks at a pet's `energy_level` before deciding what order to place tasks. A high-energy dog gets walks and play scheduled first thing in the morning. A low-energy or recovering cat gets gentler tasks (feeding, grooming) up front, with anything physically demanding pushed later.
+
+**Time windows** — you can pass a `Constraints` object with `available_hours` to tell the scheduler when the owner is actually around. Tasks that would run past the end of the window are skipped rather than crammed in.
+
+**Conflict detection** — there are two layers. `detect_conflicts(schedule)` checks a single pet's plan for tasks that overlap in duration. `conflict_warnings(plans, owner)` checks across all pets at once, which matters because an owner can't walk the dog and clean the litter box at the same time even if those are two separate schedules. Both methods return warning messages instead of crashing, so you can handle them however makes sense for your UI.
+
+**Per-pet schedules** — `generate_all_pets_plans()` produces an independent schedule for each pet rather than one big combined list. That makes it easier to display, filter, and check for conflicts per animal.
+
 ### Suggested workflow
 
 1. Read the scenario carefully and identify requirements and edge cases.

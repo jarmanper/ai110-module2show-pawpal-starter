@@ -32,8 +32,11 @@ I also added `Constraints` to encapsulate planning rules (`max_available_time`, 
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+One tradeoff the scheduler makes is packing tasks back-to-back with no buffer time between them. As soon as one task ends, the next one starts at exactly that minute. In practice a pet owner probably needs a few minutes between walking the dog and feeding the cat — they have to walk back inside, wash their hands, grab the food bowl, etc. The scheduler ignores all of that.
+
+The reason this is still a reasonable starting point is that adding buffer time would require another field on each task (or a global gap setting in `Constraints`), and it still wouldn't be accurate unless we also knew the owner's physical location for each task. For a basic planning tool, getting the order and rough time windows right matters more than modeling transition time to the minute. If the app grows, a `buffer_minutes` field in `Constraints` would be a natural next step.
+
+A second, smaller tradeoff: conflict detection only flags tasks that genuinely overlap in duration — it does not warn when two tasks are scheduled back-to-back with zero gap. That means the schedule can look tight on paper even when no formal "conflict" is reported. Again, this is acceptable for now because the alternative (requiring a minimum gap between every pair of tasks) would make the packing algorithm significantly harder to reason about.
 
 ---
 
