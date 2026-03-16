@@ -32,6 +32,22 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Features
+
+**Sorting by time** — tasks are sorted before display using a multi-key algorithm: overdue tasks surface first, then energy-fit tasks (based on the pet's energy level), then by due date, then by priority. The `sort_tasks()` method drives both the task list in the UI and the order tasks are placed into the schedule.
+
+**Energy-aware scheduling** — each pet has an `energy_level` (0.0–1.0). The scheduler uses it to decide ordering: a high-energy pet gets physically demanding tasks (walks, play, training) scheduled early; a low-energy or recovering pet gets lighter tasks (feeding, grooming) first. This uses the pet's `energy_level` attribute directly — no extra configuration needed.
+
+**Recurring task auto-spawn** — when you call `task.mark_complete()`, it returns a fresh copy of the task with a new due date (tomorrow for daily, same weekday next week for weekly). One-time tasks return `None`. This means recurring care routines stay on the list automatically without the owner re-adding them.
+
+**Time window constraints** — the `Constraints` object accepts `available_hours` as a start and end `time`. The scheduler only places tasks that fit entirely within that window and packs them sequentially. Tasks that would run past the end of the window are skipped, not truncated.
+
+**Per-pet schedule generation** — `generate_all_pets_plans()` returns a separate `Schedule` for each pet instead of one big combined list. Each pet's schedule is sorted independently using that pet's energy level, so a high-energy dog and a low-energy cat can have different orderings in the same run.
+
+**Conflict detection (two layers)** — `detect_conflicts(schedule)` checks a single pet's plan for overlapping time windows. `conflict_warnings(plans, owner)` checks across all pets at once and returns human-readable strings. Cross-pet conflicts matter because the owner has to physically do both tasks — being in two places at once isn't an option.
+
+**Filtering** — `filter_tasks()` accepts `status` ("pending" / "completed") and `category` as optional filters. The UI's "Show" dropdown feeds directly into this method before sorting and displaying the task table.
+
 ## Testing PawPal+
 
 Run the full test suite from the project root:

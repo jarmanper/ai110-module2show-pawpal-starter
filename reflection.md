@@ -1,5 +1,10 @@
 # PawPal+ Project Reflection
 
+Screenshot of the streamlit app:
+
+
+<a href="course_images/image.png" target="_blank"><img src='course_images\image.png' title='PawPal App' width='1000' alt='PawPal App' class='center-block' /></a>
+
 ## 3 core actions:
 Add a pet, create a feeding schedule, and be able to produce a daily plan.
 ## 1. System Design
@@ -27,8 +32,9 @@ I also added `Constraints` to encapsulate planning rules (`max_available_time`, 
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+The scheduler considers five constraints: the owner's available time window (`available_hours`), a maximum total time budget (`max_available_time`), a minimum priority threshold (`min_priority`), preferred task categories, and the pet's energy level (stored on the `Pet` object rather than in `Constraints`).
+
+I decided time window and priority mattered most because they map directly to a real owner's daily situation. If someone is only home from 8am to 6pm, tasks outside that window simply can't happen — there's no point scheduling them. Priority is a close second because not all care tasks are equal: a medication that needs to be given today is more urgent than a grooming session that can slip to tomorrow. Energy level felt important but less urgent, so it affects ordering rather than inclusion — a low-energy pet still needs to eat even if walks should wait.
 
 **b. Tradeoffs**
 
@@ -44,13 +50,15 @@ A second, smaller tradeoff: conflict detection only flags tasks that genuinely o
 
 **a. How you used AI**
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+I used AI tools at three distinct stages. During design, I asked open-ended questions like "what are the most important edge cases to test for a pet scheduler with sorting and recurring tasks?" — that kind of prompt was genuinely useful because it surfaced scenarios (a pet with zero tasks, two tasks at the exact same minute) I probably would have found eventually but might have missed early. During implementation, I used Copilot's inline suggestions mainly for boilerplate — dataclass field definitions, `__init__` stubs, repetitive list comprehensions. The suggestions were fast and usually right for that kind of work. During testing and documentation I used chat to help phrase docstrings and README sections, then rewrote them to sound less generated.
+
+The most effective prompts were specific and gave context: "I have a `Task` dataclass with a `frequency` field set to 'daily' or 'weekly' — how should `mark_complete` return the next occurrence?" was far more useful than "how do I handle recurring tasks?" The more I described the actual design, the better the suggestions fit.
 
 **b. Judgment and verification**
 
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
+Early in the project, Copilot suggested adding a `TaskRepository` class as a layer between `Scheduler` and the task list — essentially a data access object pattern. The reasoning was solid for a larger system, but for a single-file project with five classes it would have added two layers of indirection without any real benefit. I skipped it. The way I evaluated it was simple: I asked whether adding it would help me test anything I couldn't already test, or prevent any class from getting too large. The answer was no on both counts, so it stayed out.
+
+A second example: when I asked for help with conflict detection, the first suggestion checked only for exact start-time matches (same `start_time` value). That would have missed the more realistic case where one task starts partway through another. I caught it because the test I wrote for overlapping-but-not-same-start tasks failed. Fixing it meant switching from equality to an interval overlap check — a small change, but one the original suggestion missed.
 
 ---
 
@@ -58,13 +66,13 @@ A second, smaller tradeoff: conflict detection only flags tasks that genuinely o
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+I tested three core behaviors: sorting correctness (tasks come back in the right order regardless of insertion order), recurrence logic (daily/weekly tasks spawn the right next occurrence, one-time tasks don't), and conflict detection (overlapping time windows are flagged, empty schedules don't crash, cross-pet conflicts are distinguished from same-pet ones).
+
+These were the right things to test first because they're the behaviors the rest of the app depends on. If `sort_tasks` is wrong, every schedule is wrong. If `mark_complete` doesn't spawn the next occurrence correctly, recurring care routines silently disappear. If `detect_conflicts` crashes on edge cases, the UI breaks. Getting these right before worrying about the Streamlit layer meant I had a reliable foundation to build on.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+4 out of 5. The core algorithms — sorting, recurrence, conflict detection — pass 22 tests and I'm confident they handle the scenarios I've thought of. What I'm less confident about is coverage of longer time horizons (what happens after several weeks of recurring tasks piling up?), and the interaction between session state and the UI (Streamlit reruns introduce subtleties that are hard to test with pytest). If I had more time I'd add tests for: a daily task marked complete five days in a row to check dates keep advancing, an owner with no pets, and a constraints window that's too narrow to fit any tasks at all.
 
 ---
 
@@ -72,12 +80,18 @@ A second, smaller tradeoff: conflict detection only flags tasks that genuinely o
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
+The class design held up better than I expected. Starting with clean domain objects (`Owner`, `Pet`, `Task`, `Schedule`, `Scheduler`, `Constraints`) made every feature addition feel like extending the system rather than fighting it. When I needed to add energy-aware sorting, there was already a natural place for it — the `sort_tasks` method took a `pet` parameter and the logic slotted in without touching anything else. That kind of stability usually means the initial design was reasonable, which is satisfying to see in practice.
+
+The test suite was also more useful than I anticipated. Writing tests before I was "done" with the logic twice caught real bugs — the overlapping-conflict case and a situation where tasks with no `start_time` were incorrectly sorted. Both would have been annoying to debug later from the UI.
 
 **b. What you would improve**
 
-- If you had another iteration, what would you improve or redesign?
+Two things stand out. First, I'd add a `buffer_minutes` option to `Constraints` so the scheduler inserts a small gap between tasks rather than packing them wall-to-wall. Right now the schedule is technically correct but unrealistically tight. Second, I'd fix the session state issue in `app.py` where changing the owner or pet name in the text inputs doesn't actually update the stored objects — they're created once and never refreshed. That's a confusing experience for anyone trying the app live.
+
+On the design side, I might pull the conflict logic into its own module once it grows larger. Right now `Scheduler` is doing a lot — sorting, filtering, building schedules, detecting conflicts. That's fine for this project but would start to feel crowded if more features were added.
 
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
+AI is genuinely good at accelerating the parts of software development that are repetitive or well-understood — generating field definitions, writing docstrings, suggesting test cases, filling in boilerplate. What it doesn't replace is judgment about what the system *should* do. The most important decisions in this project — what counts as a scheduling conflict, how recurring tasks should behave, what constraints actually matter — all required thinking through the real scenario rather than accepting the first suggestion.
+
+The most useful framing I found was to treat AI as a fast junior collaborator: capable, quick, and usually directionally right, but not someone you'd trust to make architectural decisions without review. Being the "lead architect" meant staying clear on the design goals so I could evaluate suggestions against something concrete, not just accept whatever felt plausible. That took more upfront thinking than just asking "write me a scheduler," but it meant the code actually matched the problem instead of a generic version of it.
